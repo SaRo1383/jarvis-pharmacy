@@ -256,20 +256,134 @@ async function startMic() {
 
 
     mediaRecorder.onstop =
-      function() {
+  async function() {
 
-        stream
-          .getTracks()
-          .forEach(
-            track => track.stop()
-          );
+    stream
+      .getTracks()
+      .forEach(
+        track => track.stop()
+      );
 
-        addMessage(
-          '🎙️ صدا ضبط شد. اتصال به Gemini را در مرحله بعد اضافه می‌کنیم.',
-          'jarvis'
+    const audioBlob =
+      new Blob(
+        audioChunks,
+        {
+          type: mediaRecorder.mimeType || 'audio/webm'
+        }
+      );
+
+    addMessage(
+      '🎧 صدا ضبط شد؛ در حال تبدیل به متن...',
+      'jarvis'
+    );
+
+    try {
+
+      const arrayBuffer =
+        await audioBlob.arrayBuffer();
+
+      const bytes =
+        new Uint8Array(arrayBuffer);
+
+      let binary = '';
+
+      const chunkSize = 0x8000;
+
+      for (
+        let i = 0;
+        i < bytes.length;
+        i += chunkSize
+      ) {
+
+        binary += String.fromCharCode(
+          ...bytes.subarray(
+            i,
+            Math.min(
+              i + chunkSize,
+              bytes.length
+            )
+          )
         );
 
-      };
+      }
+
+      const base64 =
+        btoa(binary);
+
+      const response =
+        await fetch(
+          'https://script.google.com/macros/s/AKfycbx4hP0QhM9g6BJmZ7v2s-y2nI_XY9tyZtb7BfhJwvEtf1ydHPNPqtG8QiALIAdpMKw_-Q/exec',
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+
+            body: JSON.stringify({
+
+              action: 'transcribe',
+
+              audio: base64,
+
+              mimeType:
+                audioBlob.type
+
+            })
+
+          }
+        );
+
+
+      const result =
+        await response.json();
+
+
+      if (result.error) {
+
+        throw new Error(
+          result.error
+        );
+
+      }
+
+
+      const text =
+        result.text;
+
+
+      if (!text) {
+
+        throw new Error(
+          'متنی از صدا دریافت نشد.'
+        );
+
+      }
+
+
+      document
+        .getElementById('command')
+        .value = text;
+
+
+      addMessage(
+        text,
+        'user'
+      );
+
+
+    } catch (error) {
+
+      addMessage(
+        '❌ خطا در تبدیل صدا به متن:\n' +
+        error.message,
+        'jarvis'
+      );
+
+    }
+
+  };
 
 
     mediaRecorder.start();
