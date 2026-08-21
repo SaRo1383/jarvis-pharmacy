@@ -222,29 +222,20 @@ function sendCommand() {
     return;
   }
 
-  addMessage(
-    command,
-    'user'
-  );
+  addMessage(command, 'user');
 
   input.value = '';
 
-  /*
-   * فعلاً فقط تست می‌کنیم
-   * که جارویس با صدا جواب بدهد.
-   */
-
   const answer =
-    'دستور شما دریافت شد.';
+    'سلام، من جارویس هستم. صدای من فعال شد.';
 
-  addMessage(
-    answer,
-    'jarvis'
-  );
+  addMessage(answer, 'jarvis');
 
-  speak(answer);
+  // کمی تأخیر برای جلوگیری از محدودیت پخش خودکار Chrome
+  setTimeout(function() {
+    speak(answer);
+  }, 200);
 }
-
 
 /* =========================
    میکروفون
