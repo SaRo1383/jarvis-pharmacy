@@ -457,7 +457,6 @@ async function playGeminiTTS(text) {
     await fetch(
       APPS_SCRIPT_URL,
       {
-
         method: 'POST',
 
         headers: {
@@ -465,26 +464,18 @@ async function playGeminiTTS(text) {
             'text/plain;charset=utf-8'
         },
 
-        body:
-          JSON.stringify({
-
-            action: 'tts',
-
-            text: text
-
-          })
-
+        body: JSON.stringify({
+          action: 'tts',
+          text: text
+        })
       }
     );
 
 
   if (!response.ok) {
-
     throw new Error(
-      'HTTP ' +
-      response.status
+      'HTTP ' + response.status
     );
-
   }
 
 
@@ -493,73 +484,128 @@ async function playGeminiTTS(text) {
 
 
   if (!result.success) {
-
     throw new Error(
       result.error ||
       'Gemini TTS خطا داد.'
     );
-
   }
 
 
   if (!result.audio) {
-
     throw new Error(
       'فایل صوتی دریافت نشد.'
     );
-
   }
 
 
-  const pcmBytes =
-    base64ToUint8Array(
-      result.audio
+  // تبدیل Base64 به PCM
+  const binary =
+    atob(result.audio);
+
+  const pcm16 =
+    new Int16Array(
+      binary.length / 2
     );
 
 
-  const wavBuffer =
-    pcmToWav(
-      pcmBytes,
-      24000,
+  for (
+    let i = 0;
+    i < pcm16.length;
+    i++
+  ) {
+
+    const low =
+      binary.charCodeAt(i * 2);
+
+    const high =
+      binary.charCodeAt(i * 2 + 1);
+
+    let value =
+      low | (high << 8);
+
+
+    // تبدیل unsigned به signed
+    if (value >= 32768) {
+      value -= 65536;
+    }
+
+    pcm16[i] = value;
+  }
+
+
+  // ساخت AudioContext
+  const AudioContext =
+    window.AudioContext ||
+    window.webkitAudioContext;
+
+
+  if (!AudioContext) {
+    throw new Error(
+      'مرورگر Web Audio API را پشتیبانی نمی‌کند.'
+    );
+  }
+
+
+  const audioContext =
+    new AudioContext();
+
+
+  // بعضی مرورگرها AudioContext را
+  // ابتدا در حالت suspended قرار می‌دهند.
+  if (
+    audioContext.state ===
+    'suspended'
+  ) {
+    await audioContext.resume();
+  }
+
+
+  // ساخت بافر صوتی
+  const audioBuffer =
+    audioContext.createBuffer(
       1,
-      16
+      pcm16.length,
+      24000
     );
 
 
-  const blob =
-    new Blob(
-      [wavBuffer],
-      {
-        type:
-          'audio/wav'
-      }
-    );
+  const channelData =
+    audioBuffer.getChannelData(0);
 
 
-  const audioURL =
-    URL.createObjectURL(
-      blob
-    );
+  // PCM 16-bit → Float32
+  for (
+    let i = 0;
+    i < pcm16.length;
+    i++
+  ) {
+
+    channelData[i] =
+      pcm16[i] / 32768;
+  }
 
 
-  const audio =
-    new Audio(
-      audioURL
-    );
+  // پخش
+  const source =
+    audioContext.createBufferSource();
 
 
-  audio.volume = 1;
+  source.buffer =
+    audioBuffer;
 
 
-  await audio.play();
+  source.connect(
+    audioContext.destination
+  );
 
 
-  audio.onended =
+  source.start(0);
+
+
+  source.onended =
     function() {
 
-      URL.revokeObjectURL(
-        audioURL
-      );
+      audioContext.close();
 
     };
 
