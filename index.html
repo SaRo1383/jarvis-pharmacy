@@ -377,10 +377,8 @@ async function sendCommand() {
   const input =
     document.getElementById('command');
 
-
   const command =
     input.value.trim();
-
 
   if (!command) {
     return;
@@ -392,52 +390,148 @@ async function sendCommand() {
     'user'
   );
 
-
   input.value = '';
 
 
   setStatus(
-    '🤖 جارویس در حال پردازش...'
-  );
-
-
-  /*
-   * فعلاً برای تست صدا یک جواب ثابت داریم.
-   * بعداً همین قسمت به Gemini + Google Sheets
-   * وصل می‌شود.
-   */
-
-  const answer =
-    'سلام، من جارویس هستم. صدای من با Gemini فعال شده است.';
-
-
-  addMessage(
-    answer,
-    'jarvis'
-  );
-
-
-  setStatus(
-    '🔊 در حال آماده‌سازی صدا...'
+    '🤖 جارویس در حال بررسی موجودی...'
   );
 
 
   try {
 
+    const response =
+      await fetch(
+        APPS_SCRIPT_URL,
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type':
+              'text/plain;charset=utf-8'
+          },
+
+          body: JSON.stringify({
+
+            action: 'jarvis',
+
+            command: command
+
+          })
+
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (!data.success) {
+
+      throw new Error(
+        data.error ||
+        'خطا در جارویس'
+      );
+
+    }
+
+
+    let answer = '';
+
+
+    if (
+      data.result &&
+      data.result.success
+    ) {
+
+      if (
+        data.result.newQuantity !== undefined
+      ) {
+
+        answer =
+          'انجام شد. موجودی جدید ' +
+          data.result.newQuantity +
+          ' ' +
+          data.result.unit +
+          ' است.';
+
+      } else {
+
+        answer =
+          'انجام شد. دستور با موفقیت اجرا شد.';
+
+      }
+
+    }
+
+    else if (
+      Array.isArray(data.result)
+    ) {
+
+      if (
+        data.result.length
+      ) {
+
+        const item =
+          data.result[0];
+
+        answer =
+          item.drug +
+          ' با دوز ' +
+          item.dose +
+          ' تعداد ' +
+          item.quantity +
+          ' ' +
+          item.unit +
+          ' موجود است.';
+
+      } else {
+
+        answer =
+          'این دارو در موجودی پیدا نشد.';
+
+      }
+
+    }
+
+    else {
+
+      answer =
+        'نتوانستم دستور را اجرا کنم.';
+
+    }
+
+
+    addMessage(
+      answer,
+      'jarvis'
+    );
+
+
+    setStatus(
+      '🔊 در حال صحبت...'
+    );
+
+
     await playGeminiTTS(answer);
 
+
     setStatus('');
+
 
   }
 
-  catch (error) {
+  catch(error) {
 
     console.error(error);
 
+
     setStatus('');
 
+
     addMessage(
-      '❌ خطا در پخش صدای جارویس: ' +
+      '❌ خطا: ' +
       error.message,
       'jarvis'
     );
