@@ -14,8 +14,8 @@
 
     body {
       margin: 0;
+      background: #f4f6f8;
       font-family: Arial, sans-serif;
-      background: #f5f7fa;
     }
 
     .app {
@@ -27,12 +27,12 @@
     }
 
     header {
-      background: white;
+      background: #ffffff;
       padding: 18px;
       text-align: center;
-      border-bottom: 1px solid #ddd;
-      font-size: 21px;
+      font-size: 22px;
       font-weight: bold;
+      border-bottom: 1px solid #ddd;
     }
 
     #chat {
@@ -42,8 +42,8 @@
     }
 
     .message {
-      max-width: 82%;
-      padding: 12px 16px;
+      max-width: 85%;
+      padding: 13px 17px;
       margin: 10px 0;
       border-radius: 18px;
       line-height: 1.8;
@@ -58,6 +58,13 @@
     .user {
       background: #dbeafe;
       margin-right: auto;
+    }
+
+    #status {
+      padding: 5px 15px;
+      color: #777;
+      font-size: 13px;
+      min-height: 25px;
     }
 
     .input-area {
@@ -87,7 +94,7 @@
     }
 
     #mic {
-      background: #eee;
+      background: #eeeeee;
     }
 
     #mic.recording {
@@ -99,33 +106,11 @@
       background: #222;
       color: white;
     }
-
-    #status {
-      padding: 5px 15px;
-      color: #777;
-      font-size: 13px;
-    }
   </style>
+
 </head>
 
-<button onclick="testVoice()">
-  🔊 تست صدای جارویس
-</button>
 
-<script>
-function testVoice() {
-  const text = "سلام، من جارویس هستم.";
-
-  const speech = new SpeechSynthesisUtterance(text);
-  speech.lang = "fa-IR";
-  speech.rate = 0.9;
-  speech.volume = 1;
-
-  speechSynthesis.cancel();
-  speechSynthesis.speak(speech);
-}
-</script>
-  
 <body>
 
 <div class="app">
@@ -134,17 +119,20 @@ function testVoice() {
     💊 JARVIS Pharmacy
   </header>
 
+
   <div id="chat">
 
     <div class="message jarvis">
       سلام 👋
       من جارویس هستم.
-      می‌تونی با من تایپ کنی یا صحبت کنی.
+      می‌تونی با من صحبت کنی یا تایپ کنی.
     </div>
 
   </div>
 
+
   <div id="status"></div>
+
 
   <div class="input-area">
 
@@ -170,13 +158,22 @@ function testVoice() {
 
 <script>
 
+/* =====================================================
+   تنظیمات
+===================================================== */
+
+const APPS_SCRIPT_URL =
+  'https://script.google.com/macros/s/AKfycbx4hP0QhM9g6BJmZ7v2s-y2nI_XY9tyZtb7BfhJwvEtf1ydHPNPqtG8QiALIAdpMKw_-Q/exec';
+
+
 let recognition = null;
+
 let recording = false;
 
 
-/* =========================
-   پیام
-========================= */
+/* =====================================================
+   نمایش پیام
+===================================================== */
 
 function addMessage(text, type) {
 
@@ -199,65 +196,22 @@ function addMessage(text, type) {
 }
 
 
-/* =========================
-   صدای جارویس
-========================= */
+/* =====================================================
+   وضعیت
+===================================================== */
 
-function speak(text) {
+function setStatus(text) {
 
-  if (!('speechSynthesis' in window)) {
-    return;
-  }
+  document
+    .getElementById('status')
+    .textContent = text;
 
-  window.speechSynthesis.cancel();
-
-  const utterance =
-    new SpeechSynthesisUtterance(text);
-
-  utterance.lang = 'fa-IR';
-  utterance.rate = 0.95;
-  utterance.pitch = 1;
-
-  window.speechSynthesis.speak(
-    utterance
-  );
 }
 
 
-/* =========================
-   ارسال متن
-========================= */
-
-function sendCommand() {
-
-  const input =
-    document.getElementById('command');
-
-  const command =
-    input.value.trim();
-
-  if (!command) {
-    return;
-  }
-
-  addMessage(command, 'user');
-
-  input.value = '';
-
-  const answer =
-    'سلام، من جارویس هستم. صدای من فعال شد.';
-
-  addMessage(answer, 'jarvis');
-
-  // کمی تأخیر برای جلوگیری از محدودیت پخش خودکار Chrome
-  setTimeout(function() {
-    speak(answer);
-  }, 200);
-}
-
-/* =========================
+/* =====================================================
    میکروفون
-========================= */
+===================================================== */
 
 function toggleMic() {
 
@@ -270,12 +224,9 @@ function toggleMic() {
     startMic();
 
   }
+
 }
 
-
-/* =========================
-   شروع میکروفون
-========================= */
 
 function startMic() {
 
@@ -283,24 +234,29 @@ function startMic() {
     window.SpeechRecognition ||
     window.webkitSpeechRecognition;
 
+
   if (!SpeechRecognition) {
 
     addMessage(
-      'مرورگر شما از تشخیص گفتار پشتیبانی نمی‌کند.',
+      '❌ مرورگر شما از تشخیص گفتار پشتیبانی نمی‌کند.',
       'jarvis'
     );
 
     return;
   }
 
+
   recognition =
     new SpeechRecognition();
+
 
   recognition.lang =
     'fa-IR';
 
+
   recognition.continuous =
     false;
+
 
   recognition.interimResults =
     false;
@@ -316,10 +272,9 @@ function startMic() {
         .classList
         .add('recording');
 
-      document
-        .getElementById('status')
-        .textContent =
-        '🎙️ گوش می‌دهم...';
+      setStatus(
+        '🎙️ گوش می‌دهم...'
+      );
 
     };
 
@@ -328,14 +283,18 @@ function startMic() {
     function(event) {
 
       const text =
-        event.results[0][0]
+        event
+          .results[0][0]
           .transcript;
+
 
       document
         .getElementById('command')
         .value = text;
 
+
       stopMic();
+
 
       sendCommand();
 
@@ -352,9 +311,9 @@ function startMic() {
         .classList
         .remove('recording');
 
-      document
-        .getElementById('status')
-        .textContent = '';
+
+      setStatus('');
+
 
       addMessage(
         '❌ خطای میکروفون: ' +
@@ -375,20 +334,16 @@ function startMic() {
         .classList
         .remove('recording');
 
-      document
-        .getElementById('status')
-        .textContent = '';
+
+      setStatus('');
 
     };
 
 
   recognition.start();
+
 }
 
-
-/* =========================
-   توقف میکروفون
-========================= */
 
 function stopMic() {
 
@@ -401,7 +356,9 @@ function stopMic() {
 
   }
 
+
   recording = false;
+
 
   document
     .getElementById('mic')
@@ -410,7 +367,395 @@ function stopMic() {
 
 }
 
+
+/* =====================================================
+   ارسال دستور به جارویس
+===================================================== */
+
+async function sendCommand() {
+
+  const input =
+    document.getElementById('command');
+
+
+  const command =
+    input.value.trim();
+
+
+  if (!command) {
+    return;
+  }
+
+
+  addMessage(
+    command,
+    'user'
+  );
+
+
+  input.value = '';
+
+
+  setStatus(
+    '🤖 جارویس در حال پردازش...'
+  );
+
+
+  /*
+   * فعلاً برای تست صدا یک جواب ثابت داریم.
+   * بعداً همین قسمت به Gemini + Google Sheets
+   * وصل می‌شود.
+   */
+
+  const answer =
+    'سلام، من جارویس هستم. صدای من با Gemini فعال شده است.';
+
+
+  addMessage(
+    answer,
+    'jarvis'
+  );
+
+
+  setStatus(
+    '🔊 در حال آماده‌سازی صدا...'
+  );
+
+
+  try {
+
+    await playGeminiTTS(answer);
+
+    setStatus('');
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    setStatus('');
+
+    addMessage(
+      '❌ خطا در پخش صدای جارویس: ' +
+      error.message,
+      'jarvis'
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   درخواست صدای Gemini
+===================================================== */
+
+async function playGeminiTTS(text) {
+
+  const response =
+    await fetch(
+      APPS_SCRIPT_URL,
+      {
+
+        method: 'POST',
+
+        headers: {
+          'Content-Type':
+            'text/plain;charset=utf-8'
+        },
+
+        body:
+          JSON.stringify({
+
+            action: 'tts',
+
+            text: text
+
+          })
+
+      }
+    );
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      'HTTP ' +
+      response.status
+    );
+
+  }
+
+
+  const result =
+    await response.json();
+
+
+  if (!result.success) {
+
+    throw new Error(
+      result.error ||
+      'Gemini TTS خطا داد.'
+    );
+
+  }
+
+
+  if (!result.audio) {
+
+    throw new Error(
+      'فایل صوتی دریافت نشد.'
+    );
+
+  }
+
+
+  const pcmBytes =
+    base64ToUint8Array(
+      result.audio
+    );
+
+
+  const wavBuffer =
+    pcmToWav(
+      pcmBytes,
+      24000,
+      1,
+      16
+    );
+
+
+  const blob =
+    new Blob(
+      [wavBuffer],
+      {
+        type:
+          'audio/wav'
+      }
+    );
+
+
+  const audioURL =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  const audio =
+    new Audio(
+      audioURL
+    );
+
+
+  audio.volume = 1;
+
+
+  await audio.play();
+
+
+  audio.onended =
+    function() {
+
+      URL.revokeObjectURL(
+        audioURL
+      );
+
+    };
+
+}
+
+
+/* =====================================================
+   Base64 → Uint8Array
+===================================================== */
+
+function base64ToUint8Array(base64) {
+
+  const binary =
+    atob(base64);
+
+
+  const bytes =
+    new Uint8Array(
+      binary.length
+    );
+
+
+  for (
+    let i = 0;
+    i < binary.length;
+    i++
+  ) {
+
+    bytes[i] =
+      binary.charCodeAt(i);
+
+  }
+
+
+  return bytes;
+
+}
+
+
+/* =====================================================
+   PCM → WAV
+===================================================== */
+
+function pcmToWav(
+  pcmData,
+  sampleRate,
+  numChannels,
+  bitsPerSample
+) {
+
+  const byteRate =
+    sampleRate *
+    numChannels *
+    bitsPerSample / 8;
+
+
+  const blockAlign =
+    numChannels *
+    bitsPerSample / 8;
+
+
+  const buffer =
+    new ArrayBuffer(
+      44 +
+      pcmData.length
+    );
+
+
+  const view =
+    new DataView(
+      buffer
+    );
+
+
+  function writeString(
+    offset,
+    string
+  ) {
+
+    for (
+      let i = 0;
+      i < string.length;
+      i++
+    ) {
+
+      view.setUint8(
+        offset + i,
+        string.charCodeAt(i)
+      );
+
+    }
+
+  }
+
+
+  writeString(
+    0,
+    'RIFF'
+  );
+
+
+  view.setUint32(
+    4,
+    36 + pcmData.length,
+    true
+  );
+
+
+  writeString(
+    8,
+    'WAVE'
+  );
+
+
+  writeString(
+    12,
+    'fmt '
+  );
+
+
+  view.setUint32(
+    16,
+    16,
+    true
+  );
+
+
+  view.setUint16(
+    20,
+    1,
+    true
+  );
+
+
+  view.setUint16(
+    22,
+    numChannels,
+    true
+  );
+
+
+  view.setUint32(
+    24,
+    sampleRate,
+    true
+  );
+
+
+  view.setUint32(
+    28,
+    byteRate,
+    true
+  );
+
+
+  view.setUint16(
+    32,
+    blockAlign,
+    true
+  );
+
+
+  view.setUint16(
+    34,
+    bitsPerSample,
+    true
+  );
+
+
+  writeString(
+    36,
+    'data'
+  );
+
+
+  view.setUint32(
+    40,
+    pcmData.length,
+    true
+  );
+
+
+  new Uint8Array(
+    buffer,
+    44
+  ).set(
+    pcmData
+  );
+
+
+  return buffer;
+
+}
+
 </script>
 
 </body>
+
 </html>
