@@ -466,34 +466,38 @@ async function sendCommand() {
     }
 
     else if (
-      Array.isArray(data.result)
-    ) {
+  Array.isArray(data.result)
+) {
 
-      if (
-        data.result.length
-      ) {
+  if (data.result.length) {
 
-        const item =
-          data.result[0];
+    answer =
+      data.result.map(function(item, index) {
 
-        answer =
+        return (
+          (index + 1) +
+          ') ' +
           item.drug +
-          ' با دوز ' +
-          item.dose +
-          ' تعداد ' +
+          ' - دوز: ' +
+          (item.dose || 'ثبت نشده') +
+          ' - تعداد: ' +
           item.quantity +
-          ' ' +
+          ' - واحد: ' +
           item.unit +
-          ' موجود است.';
+          ' - تاریخ انقضا: ' +
+          item.expiry
+        );
 
-      } else {
+      }).join('\n');
 
-        answer =
-          'این دارو در موجودی پیدا نشد.';
+  } else {
 
-      }
+    answer =
+      'این دارو در موجودی پیدا نشد.';
 
-    }
+  }
+
+}
 
     else {
 
