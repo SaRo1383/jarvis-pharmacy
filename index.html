@@ -108,6 +108,24 @@
   </style>
 </head>
 
+<button onclick="testVoice()">
+  🔊 تست صدای جارویس
+</button>
+
+<script>
+function testVoice() {
+  const text = "سلام، من جارویس هستم.";
+
+  const speech = new SpeechSynthesisUtterance(text);
+  speech.lang = "fa-IR";
+  speech.rate = 0.9;
+  speech.volume = 1;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(speech);
+}
+</script>
+  
 <body>
 
 <div class="app">
