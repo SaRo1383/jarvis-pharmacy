@@ -384,7 +384,6 @@ async function sendCommand() {
     return;
   }
 
-
   addMessage(
     command,
     'user'
@@ -392,11 +391,9 @@ async function sendCommand() {
 
   input.value = '';
 
-
   setStatus(
     '🤖 جارویس در حال بررسی موجودی...'
   );
-
 
   try {
 
@@ -412,20 +409,14 @@ async function sendCommand() {
           },
 
           body: JSON.stringify({
-
             action: 'jarvis',
-
             command: command
-
           })
-
         }
       );
 
-
     const data =
       await response.json();
-
 
     if (!data.success) {
 
@@ -436,9 +427,12 @@ async function sendCommand() {
 
     }
 
-
     let answer = '';
 
+
+    /* =====================================
+       ADD / REMOVE موفق
+    ===================================== */
 
     if (
       data.result &&
@@ -452,8 +446,11 @@ async function sendCommand() {
         answer =
           'انجام شد. موجودی جدید ' +
           data.result.newQuantity +
-          ' ' +
-          data.result.unit +
+          (
+            data.result.unit
+              ? ' ' + data.result.unit
+              : ''
+          ) +
           ' است.';
 
       } else {
@@ -465,39 +462,86 @@ async function sendCommand() {
 
     }
 
+
+    /* =====================================
+       QUERY - نمایش تمام ردیف‌ها
+    ===================================== */
+
     else if (
-  Array.isArray(data.result)
-) {
+      Array.isArray(data.result)
+    ) {
 
-  if (data.result.length) {
+      if (data.result.length) {
 
-    answer =
-      data.result.map(function(item, index) {
+        const lines =
+          data.result.map(
+            function(item, index) {
 
-        return (
-          (index + 1) +
-          ') ' +
-          item.drug +
-          ' - دوز: ' +
-          (item.dose || 'ثبت نشده') +
-          ' - تعداد: ' +
-          item.quantity +
-          ' - واحد: ' +
-          item.unit +
-          ' - تاریخ انقضا: ' +
-          item.expiry
-        );
+              let line =
+                (index + 1) +
+                ') ' +
+                (item.drug || '');
 
-      }).join('\n');
+              if (item.dose) {
 
-  } else {
+                line +=
+                  ' - دوز: ' +
+                  item.dose;
 
-    answer =
-      'این دارو در موجودی پیدا نشد.';
+              }
 
-  }
+              if (
+                item.quantity !== '' &&
+                item.quantity !== null &&
+                item.quantity !== undefined
+              ) {
 
-}
+                line +=
+                  ' - تعداد: ' +
+                  item.quantity;
+
+              }
+
+              if (item.unit) {
+
+                line +=
+                  ' ' +
+                  item.unit;
+
+              }
+
+              if (item.expiry) {
+
+                line +=
+                  ' - تاریخ انقضا: ' +
+                  item.expiry;
+
+              }
+
+              return line;
+
+            }
+          );
+
+
+        answer =
+          lines.join('\n');
+
+      }
+
+      else {
+
+        answer =
+          'این دارو در موجودی پیدا نشد.';
+
+      }
+
+    }
+
+
+    /* =====================================
+       سایر پاسخ‌ها
+    ===================================== */
 
     else {
 
@@ -507,32 +551,36 @@ async function sendCommand() {
     }
 
 
+    /* =====================================
+       نمایش جواب
+    ===================================== */
+
     addMessage(
       answer,
       'jarvis'
     );
 
 
+    /* =====================================
+       پخش صوتی
+    ===================================== */
+
     setStatus(
       '🔊 در حال صحبت...'
     );
 
-
     await playGeminiTTS(answer);
-
 
     setStatus('');
 
-
   }
+
 
   catch(error) {
 
     console.error(error);
 
-
     setStatus('');
-
 
     addMessage(
       '❌ خطا: ' +
